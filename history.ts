@@ -1,5 +1,3 @@
-
-
 interface HistoryLog {
     action: string,
     data: string,
@@ -8,5 +6,5 @@ interface HistoryLog {
 
 interface History {
     save(action: string, data: string): boolean
-    get()
+    get(): HistoryLog[]
 }
