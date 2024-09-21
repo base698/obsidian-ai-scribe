@@ -8,17 +8,17 @@ import LLMActionModal from 'llm-action-modal';
 
 import ProcessManager from 'process-manager';
 
-interface TranscriptPluginSettings {
+interface ScribePluginSettings {
     host: string;
 }
 
-const DEFAULT_SETTINGS: TranscriptPluginSettings = {
+const DEFAULT_SETTINGS: ScribePluginSettings = {
     host: 'http://127.0.0.1:5522'
 }
 
 
-export default class TranscriptPlugin extends Plugin {
-    settings: TranscriptPluginSettings;
+export default class ScribePlugin extends Plugin {
+    settings: ScribePluginSettings;
     processManager: ProcessManager;
 
     constructor(app: App, manifest: PluginManifest) {
@@ -71,7 +71,7 @@ export default class TranscriptPlugin extends Plugin {
         });
 
         // This adds a settings tab so the user can configure various aspects of the plugin
-        this.addSettingTab(new TranscriptSettingTab(this.app, this));
+        this.addSettingTab(new ScribeSettingTab(this.app, this));
 
         // If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
         // Using this function will automatically remove the event listener when this plugin is disabled.
@@ -112,10 +112,10 @@ class SampleModal extends Modal {
     }
 }
 
-class TranscriptSettingTab extends PluginSettingTab {
-    plugin: TranscriptPlugin;
+class ScribeSettingTab extends PluginSettingTab {
+    plugin: ScribePlugin;
 
-    constructor(app: App, plugin: TranscriptPlugin) {
+    constructor(app: App, plugin: ScribePlugin) {
         super(app, plugin);
         this.plugin = plugin;
     }
