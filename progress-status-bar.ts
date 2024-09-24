@@ -1,4 +1,10 @@
-export default class ProgressStatusBar {
+
+export interface Updater {
+	start(): void;
+	stop(): void;
+}
+
+export class ProgressStatusBar implements Updater {
 	el: HTMLElement;
 	currentInterval: number;
 	msg: string;
@@ -9,6 +15,10 @@ export default class ProgressStatusBar {
 		this.el = el;
 		this.duration = duration;
 		this.msg = msg;
+	}
+
+	setMsg(m:string) {
+		this.msg = m
 	}
 
 	start() {

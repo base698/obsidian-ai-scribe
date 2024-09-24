@@ -1,7 +1,7 @@
 import {  MarkdownView, 
 	 Notice, Plugin, TFile
 } from 'obsidian';
-import ProgressStatusBar from 'progress-status-bar';
+import {Updater, ProgressStatusBar} from 'progress-status-bar';
 import { transcribeFile } from 'ai-client';
 
 function getFileName(selection: string): string {
@@ -22,14 +22,15 @@ function getFullPathFromFile(files: TFile[], filename: string): string {
 export default class TranscribeAction {
     statusBarItemEl: HTMLElement
     plugin: Plugin;
+	updater: Updater;
     
-	constructor(plugin: Plugin, host: string) {
-        this.statusBarItemEl = plugin.addStatusBarItem();
+	constructor(plugin: Plugin, host: string, updater:Updater) {
         this.plugin = plugin;
+		this.updater = updater;
         
 	}
 
-    static init(plugin: Plugin, host:string) {
+    static init(plugin: Plugin, host:string, updater:Updater) {
 		// This creates an icon in the left ribbon.
 		const ribbonIconEl = plugin.addRibbonIcon('activity', 'Transcribe Selection', async (evt: MouseEvent) => {
 		    const editor = plugin.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
@@ -44,7 +45,6 @@ export default class TranscribeAction {
 				let fullPath = getFullPathFromFile(plugin.app.vault.getFiles(),filename);
 
 		        // This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-				const updater = new ProgressStatusBar(plugin.addStatusBarItem());
 				updater.start();
 
 				try {

@@ -4,15 +4,19 @@ import {  MarkdownView,
 
 import { llmWithPrompt, getModels, health } from 'ai-client';
 
-import ProgressStatusBar from 'progress-status-bar';
+import { Updater } from 'progress-status-bar';
+
 
 export default class LLMActionModal extends Modal {
     statusBarItemEl: HTMLElement
     plugin: Plugin;
+	updater: Updater;
     
-	constructor(plugin: Plugin, host: string) {
+	constructor(plugin: Plugin, host: string, updater: Updater) {
 		super(plugin.app);
         this.statusBarItemEl = plugin.addStatusBarItem();
+		this.updater = updater;
+
         this.plugin = plugin;
         
 	}
@@ -52,8 +56,7 @@ export default class LLMActionModal extends Modal {
 					return new Notice("Please start Ollama", 3000);
 				}
 
-				const updater = new ProgressStatusBar(this.statusBarItemEl, 'Asking AI');
-				updater.start();
+				this.updater.start();
 
 				try {
 				   let output = await llmWithPrompt(selectedText,model,this.host)
@@ -68,13 +71,13 @@ export default class LLMActionModal extends Modal {
 					new Notice(e);
 				}
 
-				updater.stop();
+				this.updater.stop();
             }
     }
 
-    public static init(plugin: Plugin, host:string) {
+    public static init(plugin: Plugin, host:string, updater: Updater) {
 		const minutesIcon = plugin.addRibbonIcon('bot', 'Prompt Selection', async (evt: MouseEvent) => {
-			new LLMActionModal(plugin,host).open();
+			new LLMActionModal(plugin,host,updater).open();
 		});
 		minutesIcon.addClass('my-plugin-ribbon-class');
 

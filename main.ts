@@ -5,6 +5,7 @@ import { App, Editor, MarkdownView,
 
 import TranscribeAction from 'transcribe-action';
 import LLMActionModal from 'llm-action-modal';
+import {Updater, ProgressStatusBar} from 'progress-status-bar';
 
 import ProcessManager from 'process-manager';
 
@@ -37,8 +38,13 @@ export default class ScribePlugin extends Plugin {
         this.processManager = new ProcessManager();
         //this.processManager.start(cmd);
 
-        TranscribeAction.init(this, this.settings.host);
-        LLMActionModal.init(this, this.settings.host);
+
+        let statusBarItemEl = this.addStatusBarItem();
+
+		const transUpdater:Updater = new ProgressStatusBar(statusBarItemEl, 'Transcribing');
+		const LLMUpdater:Updater = new ProgressStatusBar(statusBarItemEl, 'Asking AI');
+        TranscribeAction.init(this, this.settings.host, transUpdater);
+        LLMActionModal.init(this, this.settings.host, LLMUpdater);
 
         // This adds an editor command that can perform some operation on the current editor instance
         this.addCommand({
