@@ -8,17 +8,17 @@ import { Updater } from 'progress-status-bar';
 
 
 export default class LLMActionModal extends Modal {
-    statusBarItemEl: HTMLElement
     plugin: Plugin;
 	updater: Updater;
     
 	constructor(plugin: Plugin, host: string, updater: Updater) {
 		super(plugin.app);
-        this.statusBarItemEl = plugin.addStatusBarItem();
 		this.updater = updater;
-
         this.plugin = plugin;
-        
+
+		health().then(()=> {
+		   updater.display('');
+		});
 	}
 
 	onClose() {
@@ -76,8 +76,9 @@ export default class LLMActionModal extends Modal {
     }
 
     public static init(plugin: Plugin, host:string, updater: Updater) {
+		const modal = new LLMActionModal(plugin,host,updater);
 		const minutesIcon = plugin.addRibbonIcon('bot', 'Prompt Selection', async (evt: MouseEvent) => {
-			new LLMActionModal(plugin,host,updater).open();
+			modal.open();
 		});
 		minutesIcon.addClass('my-plugin-ribbon-class');
 

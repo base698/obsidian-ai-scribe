@@ -8,6 +8,7 @@ import LLMActionModal from 'llm-action-modal';
 import {Updater, ProgressStatusBar} from 'progress-status-bar';
 
 import ProcessManager from 'process-manager';
+import { health } from 'ai-client';
 
 interface ScribePluginSettings {
     host: string;
@@ -40,6 +41,19 @@ export default class ScribePlugin extends Plugin {
 
 
         let statusBarItemEl = this.addStatusBarItem();
+
+        // clear interval if not healthy
+        this.registerInterval(window.setInterval(async () => {
+            try {
+                const ok = await health();
+             if(ok) {
+               statusBarItemEl.setText(''); 
+               return;
+             }
+            } catch(e) {
+              statusBarItemEl.setText('⛔ AI Server not Running')
+            }
+        }, 10 * 1000));
 
 		const transUpdater:Updater = new ProgressStatusBar(statusBarItemEl, 'Transcribing');
 		const LLMUpdater:Updater = new ProgressStatusBar(statusBarItemEl, 'Asking AI');
@@ -85,8 +99,6 @@ export default class ScribePlugin extends Plugin {
             console.log('click', evt);
         });
 
-        // When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-        this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
     }
 
     async onunload() {

@@ -2,6 +2,7 @@
 export interface Updater {
 	start(): void;
 	stop(): void;
+	display(s: string): void;
 }
 
 export class ProgressStatusBar implements Updater {
@@ -15,10 +16,15 @@ export class ProgressStatusBar implements Updater {
 		this.el = el;
 		this.duration = duration;
 		this.msg = msg;
+        this.el.setText("⛔ Ollama is not Running");
 	}
 
 	setMsg(m:string) {
 		this.msg = m
+	}
+
+	display(s: string) {
+		this.el.setText(s);
 	}
 
 	start() {
