@@ -8,14 +8,16 @@ import LLMActionModal from 'llm-action-modal';
 import {Updater, ProgressStatusBar} from 'progress-status-bar';
 
 import ProcessManager from 'process-manager';
-import { health } from 'ai-client';
+import { LLMProvider, LocalWhisperProvider, OllamaLLMProvider, OpenAILLMProvider, TranscriptionProvider } from 'ai-client';
 
 interface ScribePluginSettings {
     host: string;
+    openaiKey: string;
 }
 
 const DEFAULT_SETTINGS: ScribePluginSettings = {
-    host: 'http://127.0.0.1:5522'
+    host: 'http://127.0.0.1:5522',
+    openaiKey: ''
 }
 
 
@@ -42,10 +44,20 @@ export default class ScribePlugin extends Plugin {
 
         let statusBarItemEl = this.addStatusBarItem();
 
+
+        const transProvider = new LocalWhisperProvider(this.settings.host);
+		const transUpdater:Updater = new ProgressStatusBar(statusBarItemEl, 'Transcribing');
+		const LLMUpdater:Updater = new ProgressStatusBar(statusBarItemEl, 'Asking AI');
+        const llmProvider: LLMProvider = new OllamaLLMProvider(this.settings.host);
+        //const openai: OpenAILLMProvider = new OpenAILLMProvider('');
+        //const llmProvider: LLMProvider = openai;
+        //const transProvider:TranscriptionProvider = openai;
+
+
         // clear interval if not healthy
         this.registerInterval(window.setInterval(async () => {
             try {
-                const ok = await health();
+                const ok = await llmProvider.health();
              if(ok) {
                statusBarItemEl.setText(''); 
                return;
@@ -55,10 +67,8 @@ export default class ScribePlugin extends Plugin {
             }
         }, 10 * 1000));
 
-		const transUpdater:Updater = new ProgressStatusBar(statusBarItemEl, 'Transcribing');
-		const LLMUpdater:Updater = new ProgressStatusBar(statusBarItemEl, 'Asking AI');
-        TranscribeAction.init(this, this.settings.host, transUpdater);
-        LLMActionModal.init(this, this.settings.host, LLMUpdater);
+        TranscribeAction.init(this, transProvider, transUpdater);
+        LLMActionModal.init(this, this.settings.host, llmProvider, LLMUpdater);
 
         // This adds an editor command that can perform some operation on the current editor instance
         this.addCommand({
@@ -152,6 +162,15 @@ class ScribeSettingTab extends PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.host = value;
                     await this.plugin.saveSettings();
-                }));
+                }))
+            .setName("openAIKey")
+            .addText(text => {
+                text.setPlaceholder('sk-....')
+                .setValue(this.plugin.settings.openaiKey)
+                .onChange(async (value) => {
+                    this.plugin.settings.openaiKey = value;
+                    await this.plugin.saveSettings();
+                })
+            });
     }
 }

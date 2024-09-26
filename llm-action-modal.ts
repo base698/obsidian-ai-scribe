@@ -1,8 +1,8 @@
 import {  MarkdownView, 
-	 Modal, Notice, Plugin, App, Setting
+	 Modal, Notice, Plugin, Setting
 } from 'obsidian';
 
-import { llmWithPrompt, getModels, health } from 'ai-client';
+import { LLMProvider } from 'ai-client';
 
 import { Updater } from 'progress-status-bar';
 
@@ -10,13 +10,15 @@ import { Updater } from 'progress-status-bar';
 export default class LLMActionModal extends Modal {
     plugin: Plugin;
 	updater: Updater;
+	provider: LLMProvider;
     
-	constructor(plugin: Plugin, host: string, updater: Updater) {
+	constructor(plugin: Plugin, host: string, provider:LLMProvider, updater: Updater) {
 		super(plugin.app);
 		this.updater = updater;
+		this.provider = provider;
         this.plugin = plugin;
 
-		health().then(()=> {
+		provider.health().then(()=> {
 		   updater.display('');
 		});
 	}
@@ -31,7 +33,7 @@ export default class LLMActionModal extends Modal {
 		const {contentEl} = this;
 
         contentEl.createEl('h2', {text: "Select a Model"});
-        const models = await getModels();
+        const models = await this.provider.getModels();
         models.forEach((model: string) => {
             new Setting(contentEl).setName(model).addButton(button => {
                 button.setButtonText('Select').onClick(async ()=>{
@@ -51,7 +53,7 @@ export default class LLMActionModal extends Modal {
         if (editor) {
 			    const selectedText = editor.getSelection();
 
-				const isOk = await health();
+				const isOk = await this.provider.health();
 				if(!isOk) {
 					return new Notice("Please start Ollama", 3000);
 				}
@@ -59,10 +61,7 @@ export default class LLMActionModal extends Modal {
 				this.updater.start();
 
 				try {
-				   let output = await llmWithPrompt(selectedText,model,this.host)
-					if(output.error) {
-						return new Notice(output.error, 3000);
-					}
+				   let output = await this.provider.getResponse(selectedText,model);
 					navigator.clipboard.writeText(output);
 					new Notice("Copied: "+output.slice(0,200)+"...",5000);
 					console.log(output)
@@ -75,8 +74,8 @@ export default class LLMActionModal extends Modal {
             }
     }
 
-    public static init(plugin: Plugin, host:string, updater: Updater) {
-		const modal = new LLMActionModal(plugin,host,updater);
+    public static init(plugin: Plugin, host:string, provider:LLMProvider,updater: Updater) {
+		const modal = new LLMActionModal(plugin,host,provider, updater);
 		const minutesIcon = plugin.addRibbonIcon('bot', 'Prompt Selection', async (evt: MouseEvent) => {
 			modal.open();
 		});

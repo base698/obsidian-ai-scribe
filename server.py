@@ -119,7 +119,14 @@ def transcribe_endpoint():
     
     return jsonify({"text": transcription_result}), 200
 
-@app.route('/v1/<model>/run', methods=['POST'])
+@app.route('/v1/ollama/tags', methods=['GET'])
+def get_models():
+    url = "http://localhost:11434/api/tags"
+    response = requests.get(url)
+    return response.text, 200
+
+ 
+@app.route('/v1/ollama/<model>', methods=['POST'])
 def run_model(model):
     # Extract prompt from the request body
     data = request.json
@@ -128,10 +135,6 @@ def run_model(model):
     if not prompt:
         return jsonify({"error": "Prompt is required"}), 400
     
-    if model != "llama3" or model != "llama3.1":
-        print(f'Model unknown. Setting model({model}) to llama3')
-        model = "llama3.1"
-
     model_output = ollama_request(prompt,model)
 
     if model_output == None:
