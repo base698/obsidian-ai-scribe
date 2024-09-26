@@ -7,47 +7,43 @@ export interface LLMProvider {
   health(): Promise<boolean>;
 }
 
-export class OpenAILLMProvider implements LLMProvider,TranscriptionProvider {
+export class OpenAILLMProvider implements LLMProvider, TranscriptionProvider {
   key: string;
-  constructor(key:string) {
+  constructor(key: string) {
     this.key = key;
   }
 
   async transcribeFile(file: TFile): Promise<string> {
- 
+
     const apiUrl = 'https://api.openai.com/v1/audio/transcriptions';
 
-    //const fileContents = await app.vault.adapter.read(filePath);
-
     const formData = new FormData();
-    console.log('!!!');
-    console.log(file,file.path,file.vault,file.vault.adapter);
     // Read the file as an ArrayBuffer
     const fileBuffer = await file.vault.adapter.readBinary(file.path);
-    
+
     // Create a Blob from the ArrayBuffer
     const blob = new Blob([fileBuffer], { type: 'audio/mpeg' });
-    
+
     // Create FormData and append the file
     formData.append('file', blob, file.path);
     formData.append('model', 'whisper-1');
-  
+
     const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.key}`
-        },
-        body: formData
-      });
-  
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-  
-      const result = await response.json();
-      console.log('Transcription:', result.text);
-      return result.text;
-    
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.key}`
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('Transcription:', result.text);
+    return result.text;
+
   }
 
   // TODO: consider using this in getModels
@@ -61,17 +57,18 @@ export class OpenAILLMProvider implements LLMProvider,TranscriptionProvider {
       }
     });
     if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-    return (await response.json()) != null ;
+    return (await response.json()) != null;
 
   }
 
   async getModels(): Promise<string[]> {
-    return ['gpt-4o','gpt-4','gpt-3.5-turbo','gpt-4o-mini', 'o1-preview']
+    return ['gpt-4o', 'gpt-4', 'gpt-3.5-turbo', 'gpt-4o-mini', 'o1-preview']
   }
 
-  async getResponse(prompt:string, model:string="gpt-4") {
+  async getResponse(prompt: string, model: string = "gpt-4") {
+    console.log('calling openai');
     const url = 'https://api.openai.com/v1/chat/completions'
     const requestBody = {
       model: model,
@@ -80,7 +77,7 @@ export class OpenAILLMProvider implements LLMProvider,TranscriptionProvider {
       ],
       max_tokens: 1000
     };
-    
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -101,7 +98,7 @@ export class OpenAILLMProvider implements LLMProvider,TranscriptionProvider {
 export class OllamaLLMProvider implements LLMProvider {
   host: string;
 
-  constructor(host:string='http://127.0.0.1:5522') {
+  constructor(host: string = 'http://127.0.0.1:5522') {
     this.host = host;
   }
 
@@ -113,45 +110,45 @@ export class OllamaLLMProvider implements LLMProvider {
   async getModels(): Promise<string[]> {
 
     const url = `${this.host}/v1/ollama/tags`;
-  
+
     // Request options
     const options = {
-        method: 'GET',
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       }
     };
-  
+
     const response = await fetch(url, options);
     const data = await response.json();
 
-    return data.models.map((item:any)=>item.model);
+    return data.models.map((item: any) => item.model);
   }
 
-  async getResponse(prompt:string, model:string="llama3.1") {
+  async getResponse(prompt: string, model: string = "llama3.1") {
     // API endpoint URL
     const url = `${this.host}/v1/ollama/${model}`;
-  
+
     // Request body
     const body = JSON.stringify({ prompt: prompt });
-  
+
     // Request options
     const options = {
-        method: 'POST',
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: body
     };
-  
+
     const response = await fetch(url, options);
     const data = await response.json();
-    if(!response.ok) {
-        return data;
+    if (!response.ok) {
+      return data;
     }
 
     return data['text'];
-      
+
   }
 
 }
@@ -163,19 +160,19 @@ export interface TranscriptionProvider {
 
 export class LocalWhisperProvider implements TranscriptionProvider {
   host: string;
-  constructor(host:string ='http://127.0.0.1:5522') {
+  constructor(host: string = 'http://127.0.0.1:5522') {
     this.host = host;
   }
 
-	async transcribeFile(file: TFile): Promise<string> {
+  async transcribeFile(file: TFile): Promise<string> {
     // API endpoint URL
     const url = `${this.host}/v1/transcribe`;
-  
-		let filename = file.vault.adapter.getFullPath(file.path);
+
+    let filename = file.vault.adapter.getFullPath(file.path);
 
     // Request body
     const body = JSON.stringify({ filename: filename });
-  
+
     // Request options
     const options = {
       method: 'POST',
@@ -184,17 +181,17 @@ export class LocalWhisperProvider implements TranscriptionProvider {
       },
       body: body
     };
-  
+
     // Make the fetch request
     const response = await fetch(url, options);
     const data = await response.json()
 
-    if(!response.ok) {
-        return data;
+    if (!response.ok) {
+      return data;
     }
 
     return data['text'];
-		
-	}
+
+  }
 }
 

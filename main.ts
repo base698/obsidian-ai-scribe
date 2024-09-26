@@ -1,22 +1,26 @@
-import { App, Editor, MarkdownView, 
-     Modal, Plugin, PluginManifest,
-     PluginSettingTab, Setting } from 'obsidian';
+import {
+    App, Editor, MarkdownView,
+    Modal, Plugin, PluginManifest,
+    PluginSettingTab, Setting
+} from 'obsidian';
 
 
 import TranscribeAction from 'transcribe-action';
 import LLMActionModal from 'llm-action-modal';
-import {Updater, ProgressStatusBar} from 'progress-status-bar';
+import { Updater, ProgressStatusBar } from 'progress-status-bar';
 
 import ProcessManager from 'process-manager';
 import { LLMProvider, LocalWhisperProvider, OllamaLLMProvider, OpenAILLMProvider, TranscriptionProvider } from 'ai-client';
 
 interface ScribePluginSettings {
     host: string;
+    ai: 'Local AI' | 'openai';
     openaiKey: string;
 }
 
 const DEFAULT_SETTINGS: ScribePluginSettings = {
     host: 'http://127.0.0.1:5522',
+    ai: 'Local AI',
     openaiKey: ''
 }
 
@@ -33,7 +37,7 @@ export default class ScribePlugin extends Plugin {
         await this.loadSettings();
 
         const vaultPath = this.app.vault.adapter.basePath;
-        const pluginDir =  `${vaultPath}/.obsidian/plugins/${this.manifest.id}`;
+        const pluginDir = `${vaultPath}/.obsidian/plugins/${this.manifest.id}`;
         const runPath = `${pluginDir}/run_server.sh`;
 
         const cmd = `${runPath} ${pluginDir}`;
@@ -43,42 +47,44 @@ export default class ScribePlugin extends Plugin {
 
 
         let statusBarItemEl = this.addStatusBarItem();
+        const llmUpdater: Updater = new ProgressStatusBar(statusBarItemEl, 'Asking AI');
+        const transUpdater: Updater = new ProgressStatusBar(statusBarItemEl, 'Transcribing');
 
 
-        const transProvider = new LocalWhisperProvider(this.settings.host);
-		const transUpdater:Updater = new ProgressStatusBar(statusBarItemEl, 'Transcribing');
-		const LLMUpdater:Updater = new ProgressStatusBar(statusBarItemEl, 'Asking AI');
-        const llmProvider: LLMProvider = new OllamaLLMProvider(this.settings.host);
-        //const openai: OpenAILLMProvider = new OpenAILLMProvider('');
-        //const llmProvider: LLMProvider = openai;
-        //const transProvider:TranscriptionProvider = openai;
+        let getProviders = (): [TranscriptionProvider, LLMProvider] => {
+            let transProvider: TranscriptionProvider = new LocalWhisperProvider(this.settings.host);
+            let llmProvider: LLMProvider = new OllamaLLMProvider(this.settings.host);
 
+            if (this.settings.ai == 'openai') {
+                const openai: OpenAILLMProvider = new OpenAILLMProvider(this.settings.openaiKey);
+                llmProvider = openai;
+                transProvider = openai;
+            }
+            return [transProvider, llmProvider];
+        };
 
-        // clear interval if not healthy
         this.registerInterval(window.setInterval(async () => {
             try {
                 const ok = await llmProvider.health();
-             if(ok) {
-               statusBarItemEl.setText(''); 
-               return;
-             }
-            } catch(e) {
-              statusBarItemEl.setText('⛔ AI Server not Running')
+                if (ok) {
+                    statusBarItemEl.setText('');
+                    return;
+                }
+            } catch (e) {
+                statusBarItemEl.setText('⛔ AI Server not Running')
             }
         }, 10 * 1000));
 
-        TranscribeAction.init(this, transProvider, transUpdater);
-        LLMActionModal.init(this, this.settings.host, llmProvider, LLMUpdater);
+        const [transProvider, llmProvider] = getProviders();
+        const transcribeAction = TranscribeAction.init(this, transProvider, transUpdater);
+        const llmAction = LLMActionModal.init(this, this.settings.host, llmProvider, llmUpdater);
 
-        // This adds an editor command that can perform some operation on the current editor instance
-        this.addCommand({
-            id: 'sample-editor-command',
-            name: 'Sample editor command',
-            editorCallback: (editor: Editor, view: MarkdownView) => {
-                console.log(editor.getSelection());
-                editor.replaceSelection('Sample Editor Command');
-            }
-        });
+        let resetProviders = () => {
+            const [transProvider, llmProvider] = getProviders();
+            console.log(transProvider, llmProvider)
+            transcribeAction.setProvider(transProvider);
+            llmAction.setProvider(llmProvider);
+        }
 
         // This adds a complex command that can check whether the current state of the app allows execution of the command
         this.addCommand({
@@ -101,13 +107,7 @@ export default class ScribePlugin extends Plugin {
         });
 
         // This adds a settings tab so the user can configure various aspects of the plugin
-        this.addSettingTab(new ScribeSettingTab(this.app, this));
-
-        // If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-        // Using this function will automatically remove the event listener when this plugin is disabled.
-        this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-            console.log('click', evt);
-        });
+        this.addSettingTab(new ScribeSettingTab(this.app, this, resetProviders));
 
     }
 
@@ -130,47 +130,71 @@ class SampleModal extends Modal {
     }
 
     onOpen() {
-        const {contentEl} = this;
+        const { contentEl } = this;
         contentEl.setText('Woah!');
     }
 
     onClose() {
-        const {contentEl} = this;
+        const { contentEl } = this;
         contentEl.empty();
     }
 }
 
 class ScribeSettingTab extends PluginSettingTab {
     plugin: ScribePlugin;
+    notify: () => void;
 
-    constructor(app: App, plugin: ScribePlugin) {
+    constructor(app: App, plugin: ScribePlugin, notify: () => void) {
         super(app, plugin);
         this.plugin = plugin;
+        this.notify = notify;
     }
 
     display(): void {
-        const {containerEl} = this;
+        const { containerEl } = this;
 
         containerEl.empty();
 
+        // Setting for choosing between two options using radio buttons
         new Setting(containerEl)
-            .setName('host')
-            .setDesc('Server and port for Whisper and LLM, http://127.0.0.1:5522')
-            .addText(text => text
-                .setPlaceholder('http://127.0.0.1:1234')
-                .setValue(this.plugin.settings.host)
-                .onChange(async (value) => {
-                    this.plugin.settings.host = value;
-                    await this.plugin.saveSettings();
-                }))
-            .setName("openAIKey")
-            .addText(text => {
-                text.setPlaceholder('sk-....')
-                .setValue(this.plugin.settings.openaiKey)
-                .onChange(async (value) => {
-                    this.plugin.settings.openaiKey = value;
-                    await this.plugin.saveSettings();
-                })
-            });
+            .setName('Choose AI Server')
+            .addDropdown(dd =>
+                dd.addOption('openai', 'Open AI')
+                    .addOption('Local AI', 'Local AI')
+                    .setValue(this.plugin.settings.ai)
+                    .onChange(async (value: string) => {
+                        this.plugin.settings.ai = (value == 'openai') ? 'openai' : 'Local AI';
+                        await this.plugin.saveSettings();
+                        this.display(); // Re-render the settings tab
+                    })
+            );
+
+        // Conditionally add the text field based on the selected radio option
+        if (this.plugin.settings.ai === 'openai') {
+            new Setting(containerEl)
+                .setName("openAIKey")
+                .addText(text => {
+                    text.setPlaceholder('sk-....')
+                        .setValue(this.plugin.settings.openaiKey)
+                        .onChange(async (value) => {
+                            this.plugin.settings.openaiKey = value;
+                            await this.plugin.saveSettings();
+                        })
+                });
+
+        } else {
+            new Setting(containerEl)
+                .setName('host')
+                .setDesc('Server and port for Whisper and LLM, http://127.0.0.1:5522')
+                .addText(text => text
+                    .setPlaceholder('http://127.0.0.1:1234')
+                    .setValue(this.plugin.settings.host)
+                    .onChange(async (value) => {
+                        this.plugin.settings.host = value;
+                        await this.plugin.saveSettings();
+                    }))
+        }
+
+        this.notify();
     }
 }
