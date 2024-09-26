@@ -81,7 +81,6 @@ export default class ScribePlugin extends Plugin {
 
         let resetProviders = () => {
             const [transProvider, llmProvider] = getProviders();
-            console.log(transProvider, llmProvider)
             transcribeAction.setProvider(transProvider);
             llmAction.setProvider(llmProvider);
         }
