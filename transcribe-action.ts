@@ -36,7 +36,7 @@ export default class TranscribeAction {
 	constructor(plugin: Plugin, provider: TranscriptionProvider, updater: Updater) {
 		this.plugin = plugin;
 		this.updater = updater;
-		this.provider = this.provider;
+		this.provider = provider;
 
 	}
 
