@@ -81,12 +81,6 @@ def ollama_request(prompt, model="llama3"):
         raise requests.HTTPError(error_message)
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {
-    "origins": ["app://obsidian.md"],
-    "methods": ["GET", "POST", "OPTIONS"],
-    "allow_headers": ["Content-Type", "Authorization"]
-}})
-
 
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -141,6 +135,12 @@ def run_model(model):
         return jsonify({"error": "Only one request allowed at a time."}), 429
     
     return jsonify({"text": model_output}), 200
+
+CORS(app, resources={r"/*": {
+    "origins": ["app://obsidian.md"],
+    "methods": ["GET", "POST", "OPTIONS"],
+    "allow_headers": ["Content-Type", "Authorization"]
+}})
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Transcription script with optional server mode")

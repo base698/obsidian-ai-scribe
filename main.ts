@@ -40,10 +40,8 @@ export default class ScribePlugin extends Plugin {
         const pluginDir = `${vaultPath}/.obsidian/plugins/${this.manifest.id}`;
         const runPath = `${pluginDir}/run_server.sh`;
 
-        const cmd = `${runPath} ${pluginDir}`;
-
-        this.processManager = new ProcessManager();
-        //this.processManager.start(cmd);
+        this.processManager = new ProcessManager(this.app.vault.adapter);
+        await this.processManager.start(runPath);
 
 
         let statusBarItemEl = this.addStatusBarItem();
@@ -84,6 +82,23 @@ export default class ScribePlugin extends Plugin {
             transcribeAction.setProvider(transProvider);
             llmAction.setProvider(llmProvider);
         }
+
+		this.addCommand({
+			id: 'stop-server',
+			name: 'Stop Python Server',
+			editorCallback: (editor: Editor, view: MarkdownView) => {
+                this.processManager.stop();
+			}
+		});
+
+		this.addCommand({
+			id: 'start-server',
+			name: 'Start Python Server',
+			editorCallback: (editor: Editor, view: MarkdownView) => {
+                this.processManager.start(runPath);
+			}
+		});
+
 
         // This adds a complex command that can check whether the current state of the app allows execution of the command
         this.addCommand({
