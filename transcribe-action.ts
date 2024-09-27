@@ -13,20 +13,6 @@ function getFileName(selection: string): string {
 	return '';
 }
 
-function findTFile(files: TFile[], filename: string): TFile {
-	let file: TFile | undefined = files.find((file: TFile) => {
-		return file.path.includes(filename);
-	});
-
-	if (file == undefined) {
-		throw `TFile ${filename} Not Found`;
-	}
-
-	return file;
-
-}
-
-
 export default class TranscribeAction {
 	statusBarItemEl: HTMLElement
 	plugin: Plugin;
@@ -58,10 +44,14 @@ export default class TranscribeAction {
 					return new Notice('No recording found in selection.', 3000);
 				}
 
-				const file = findTFile(plugin.app.vault.getFiles(), filename);
+				const file: TFile | null = plugin.app.vault.getFileByPath(filename)
+				if(!file) {
+					return new Notice(`Selection ${selectedText} did not contain file`);
+				}
+
 				file.vault = plugin.app.vault;
 
-				// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
+				// This adds a status bar item that updates while the request is being made
 				updater.start();
 
 				try {
@@ -69,7 +59,6 @@ export default class TranscribeAction {
 					updater.stop();
 					navigator.clipboard.writeText(output);
 					new Notice("Copied: " + output.slice(0, 200) + "...", 5000);
-					console.log(output)
 
 				} catch (err) {
 					console.log(err);

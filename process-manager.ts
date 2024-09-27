@@ -38,7 +38,6 @@ export default class ProcessManager {
       const { stdout } = await execAsync(command);
       const pidStr = stdout.trim();
       this.pid = parseInt(pidStr,10);
-      console.log(`Process started with PID: ${this.pid}`);
     } catch (error) {
       console.error('Failed to start process:', error);
       throw error;
@@ -49,7 +48,6 @@ export default class ProcessManager {
     if (this.pid) {
       try {
         await execAsync(`kill ${this.pid}`);
-        console.log(`Process with PID ${this.pid} stopped`);
         this.pid = null;
       } catch (error) {
         console.error('Failed to stop process:', error);

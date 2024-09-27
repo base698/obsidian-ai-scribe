@@ -22,7 +22,7 @@ export class OpenAILLMProvider implements LLMProvider, TranscriptionProvider {
     const fileBuffer = await file.vault.adapter.readBinary(file.path);
 
     // Create a Blob from the ArrayBuffer
-    const blob = new Blob([fileBuffer], { type: 'audio/mpeg' });
+    const blob = new Blob([fileBuffer]);//, { type: 'audio/mpeg' });
 
     // Create FormData and append the file
     formData.append('file', blob, file.path);
@@ -41,7 +41,6 @@ export class OpenAILLMProvider implements LLMProvider, TranscriptionProvider {
     }
 
     const result = await response.json();
-    console.log('Transcription:', result.text);
     return result.text;
 
   }

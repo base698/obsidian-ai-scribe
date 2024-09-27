@@ -8,6 +8,10 @@ When using the recording feature of Obsidian, a link to the audio file is create
 
 The LLM Prompt button takes the currently selected text and uses the selected text as a prompt.  By default this uses Ollama, but can be configured to use OpenAI Models as well.
 
+## Usage
+
+- The Plugin Manages a server running on 5522 for the local Ollama interaction.  You must have python and ffmpeg installed for all the features to work properly.  Setting the plugin into the OpenAI mode will not require running the server.
+
 
 ## First time developing plugins in Obsidian?
 
