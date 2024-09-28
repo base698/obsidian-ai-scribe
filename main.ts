@@ -177,7 +177,6 @@ class HistoryModal extends Modal {
     copyToClipboard(data: IHistoryLog) {
         const textToCopy = `${data._response}`;
         navigator.clipboard.writeText(textToCopy).then(() => {
-            new Notice('Copied to clipboard: ' + data._response.slice(0,30) + '...');
         }, (err) => {
             new Notice('Failed to copy to clipboard');
         });
