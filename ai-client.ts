@@ -13,6 +13,10 @@ export class OpenAILLMProvider implements LLMProvider, TranscriptionProvider {
     this.key = key;
   }
 
+  model() {
+    return 'whisper-1';
+  }
+
   async transcribeFile(file: TFile): Promise<string> {
 
     const apiUrl = 'https://api.openai.com/v1/audio/transcriptions';
@@ -154,6 +158,7 @@ export class OllamaLLMProvider implements LLMProvider {
 
 
 export interface TranscriptionProvider {
+  model():string;
   transcribeFile(file: TFile): Promise<string>;
 }
 
@@ -161,6 +166,10 @@ export class LocalWhisperProvider implements TranscriptionProvider {
   host: string;
   constructor(host: string = 'http://127.0.0.1:5522') {
     this.host = host;
+  }
+
+  model(): string {
+    return 'whisper-small'
   }
 
   async transcribeFile(file: TFile): Promise<string> {

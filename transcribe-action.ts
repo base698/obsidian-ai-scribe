@@ -66,7 +66,7 @@ export default class TranscribeAction {
 					const log = history.build()
 						.duration(duration)
 						.start(start)
-						.model('whisper')
+						.model(action.provider.model())
 						.response(output)
 						.prompt(filename)
 					history.save(log);
