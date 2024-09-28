@@ -129,6 +129,11 @@ export default class ScribePlugin extends Plugin {
         await this.processManager.stop();
     }
 
+    async onclose() {
+        console.log('closing!');
+        await this.processManager.stop();
+    }
+
     async loadSettings() {
         this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
     }
