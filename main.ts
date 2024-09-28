@@ -1,7 +1,7 @@
 import {
     App, Editor, MarkdownView,
     Modal, Plugin, PluginManifest,
-    PluginSettingTab, Setting
+    PluginSettingTab, Setting, Notice
 } from 'obsidian';
 
 
@@ -11,6 +11,7 @@ import { Updater, ProgressStatusBar } from 'progress-status-bar';
 
 import ProcessManager from 'process-manager';
 import { LLMProvider, LocalWhisperProvider, OllamaLLMProvider, OpenAILLMProvider, TranscriptionProvider } from 'ai-client';
+import { getHistory, IHistory, IHistoryLog } from 'history';
 
 interface ScribePluginSettings {
     host: string;
@@ -73,9 +74,11 @@ export default class ScribePlugin extends Plugin {
             }
         }, 10 * 1000));
 
+
+        const doHistory = () => new HistoryModal(this.app, getHistory()).open();
         const [transProvider, llmProvider] = getProviders();
-        const transcribeAction = TranscribeAction.init(this, transProvider, transUpdater);
-        const llmAction = LLMActionModal.init(this, this.settings.host, llmProvider, llmUpdater);
+        const transcribeAction = TranscribeAction.init(this, transProvider, transUpdater, doHistory);
+        const llmAction = LLMActionModal.init(this, this.settings.host, llmProvider, llmUpdater, doHistory);
 
         let resetProviders = () => {
             const [transProvider, llmProvider] = getProviders();
@@ -83,40 +86,30 @@ export default class ScribePlugin extends Plugin {
             llmAction.setProvider(llmProvider);
         }
 
-		this.addCommand({
-			id: 'stop-server',
-			name: 'Stop Python Server',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
+        this.addCommand({
+            id: 'stop-server',
+            name: 'Stop Python Server',
+            editorCallback: (editor: Editor, view: MarkdownView) => {
                 this.processManager.stop();
-			}
-		});
+            }
+        });
 
-		this.addCommand({
-			id: 'start-server',
-			name: 'Start Python Server',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
+        this.addCommand({
+            id: 'start-server',
+            name: 'Start Python Server',
+            editorCallback: (editor: Editor, view: MarkdownView) => {
                 this.processManager.start(runPath);
-			}
-		});
+            }
+        });
 
 
         // This adds a complex command that can check whether the current state of the app allows execution of the command
         this.addCommand({
             id: 'open-history',
             name: 'Open history',
-            checkCallback: (checking: boolean) => {
-                // Conditions to check
-                const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-                if (markdownView) {
-                    // If checking is true, we're simply "checking" if the command can be run.
-                    // If checking is false, then we want to actually perform the operation.
-                    if (!checking) {
-                        new SampleModal(this.app).open();
-                    }
-
-                    // This command will only show up in Command Palette when the check function returns true
-                    return true;
-                }
+            editorCallback: (editor: Editor, view: MarkdownView) => {
+                let history = getHistory();
+                new HistoryModal(this.app, history).open();
             }
         });
 
@@ -143,14 +136,51 @@ export default class ScribePlugin extends Plugin {
     }
 }
 
-class SampleModal extends Modal {
-    constructor(app: App) {
+
+class HistoryModal extends Modal {
+    history: IHistory;
+    constructor(app: App, history: IHistory) {
         super(app);
+        this.history = history;
     }
 
-    onOpen() {
+    async onOpen() {
         const { contentEl } = this;
-        contentEl.setText('Woah!');
+        let requests = await this.history.get();
+        requests.sort((a,b) => b._start - a._start);
+        if(requests.length > 10) {
+            requests = requests.slice(0,10);
+        }
+
+        // Create table
+        const table = contentEl.createEl('table');
+        const headerRow = table.createEl('tr');
+        headerRow.createEl('th', { text: 'Date' });
+        headerRow.createEl('th', { text: 'Prompt' });
+        headerRow.createEl('th', { text: 'Response' });
+        headerRow.createEl('th', { text: '' });
+
+        requests.forEach((data:IHistoryLog) => {
+        // Add data to table
+        const dataRow = table.createEl('tr');
+        dataRow.createEl('td', { text: `${new Date(data._start).toString().slice(0,24)}` });
+        dataRow.createEl('td', { text: data._prompt.slice(0,100) });
+        dataRow.createEl('td', { text: data._response.slice(0,100) });
+
+        // Create copy button
+        const copyButton = dataRow.createEl('td').createEl('button', { text: 'Copy' });
+        copyButton.addEventListener('click', () => this.copyToClipboard(data));
+
+        });
+    }
+
+    copyToClipboard(data: IHistoryLog) {
+        const textToCopy = `${data._response}`;
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            new Notice('Copied to clipboard: ' + data._response.slice(0,30) + '...');
+        }, (err) => {
+            new Notice('Failed to copy to clipboard');
+        });
     }
 
     onClose() {

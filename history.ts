@@ -1,8 +1,17 @@
 
 export interface IHistory {
     save(hl: HistoryLog): void;
-    get(): IHistoryLog[];
+    get(): Promise<IHistoryLog[]>;
     build(): HistoryLog;
+}
+
+let appHistory: IHistory;
+export function getHistory(): IHistory {
+    if(!appHistory) {
+        appHistory = new JSONFileHistory();
+    }
+
+    return appHistory;
 }
 
 export class JSONFileHistory implements IHistory {
@@ -18,8 +27,8 @@ export class JSONFileHistory implements IHistory {
         window.app.vault.adapter.append(this._filename,line+'\n');
     }
 
-    get():IHistoryLog[] {
-        const data = window.app.vault.adapter.append(this._filename);
+    async get():Promise<IHistoryLog[]> {
+        const data = await window.app.vault.adapter.read(this._filename);
         const lines = data.split('\n');
         return lines.filter((item:string)=>item.trim()).map((line:string) => {
             const log:IHistoryLog = JSON.parse(line);
@@ -32,7 +41,7 @@ export class JSONFileHistory implements IHistory {
     }
 }
 
-interface IHistoryLog {
+export interface IHistoryLog {
     _duration: number;
     _start: number;
     _model: string;

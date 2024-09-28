@@ -4,7 +4,7 @@ import {
 } from 'obsidian';
 
 import { LLMProvider } from 'ai-client';
-import { JSONFileHistory } from 'history';
+import { getHistory, IHistory } from 'history';
 
 import { Updater } from 'progress-status-bar';
 
@@ -14,13 +14,15 @@ export default class LLMActionModal extends Modal {
 	updater: Updater;
 	provider: LLMProvider;
 	history: IHistory;
+	notify: ()=>void;
 
-	constructor(plugin: Plugin, host: string, provider: LLMProvider, updater: Updater) {
+	constructor(plugin: Plugin, host: string, provider: LLMProvider, updater: Updater,notify:()=>void) {
 		super(plugin.app);
 		this.updater = updater;
 		this.provider = provider;
 		this.plugin = plugin;
-		this.history = new JSONFileHistory();
+		this.history = getHistory();
+		this.notify = notify;
 
 		provider.health().then(() => {
 			updater.display('');
@@ -47,6 +49,8 @@ export default class LLMActionModal extends Modal {
 				button.setButtonText('Select').onClick(async () => {
 					this.close();
 					await this.doModelRequest(model);
+					this.notify();
+					
 				})
 
 			});
@@ -72,7 +76,7 @@ export default class LLMActionModal extends Modal {
 				let output = await this.provider.getResponse(selectedText, model);
 
 			    const end = Date.now();
-				const duration = (end - start) / 60;
+				const duration = (end - start) / 1000 / 60;
 				const log = this.history.build()
 				   .duration(duration)
 				   .start(start)
@@ -92,8 +96,8 @@ export default class LLMActionModal extends Modal {
 		}
 	}
 
-	public static init(plugin: Plugin, host: string, provider: LLMProvider, updater: Updater): LLMActionModal {
-		const modal = new LLMActionModal(plugin, host, provider, updater);
+	public static init(plugin: Plugin, host: string, provider: LLMProvider, updater: Updater,notify:()=>void): LLMActionModal {
+		const modal = new LLMActionModal(plugin, host, provider, updater,notify);
 		const minutesIcon = plugin.addRibbonIcon('bot', 'Prompt Selection', async (evt: MouseEvent) => {
 			modal.open();
 		});

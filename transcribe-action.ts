@@ -4,7 +4,7 @@ import {
 } from 'obsidian';
 import { Updater } from 'progress-status-bar';
 import { TranscriptionProvider } from 'ai-client';
-import { JSONFileHistory } from 'history';
+import { getHistory } from 'history';
 
 function getFileName(selection: string): string {
 	const match = /!?\[\[(.*?\.webm)\]\]/.exec(selection);
@@ -31,10 +31,10 @@ export default class TranscribeAction {
 		this.provider = provider;
 	}
 
-	static init(plugin: Plugin, tsProvider: TranscriptionProvider, updater: Updater): TranscribeAction {
+	static init(plugin: Plugin, tsProvider: TranscriptionProvider, updater: Updater, notify: ()=>void): TranscribeAction {
 		// This creates an icon in the left ribbon.
 		const action = new TranscribeAction(plugin, tsProvider, updater);
-		const history = new JSONFileHistory();
+		const history = getHistory();
 
 		const ribbonIconEl = plugin.addRibbonIcon('activity', 'Transcribe Selection', async (evt: MouseEvent) => {
 			const editor = plugin.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
@@ -62,7 +62,7 @@ export default class TranscribeAction {
 					let output = await action.provider.transcribeFile(file);
 
 					const end = Date.now();
-					const duration = (end - start) / 60;
+					const duration = (end - start) / 1000 / 60;
 					const log = history.build()
 						.duration(duration)
 						.start(start)
@@ -75,6 +75,7 @@ export default class TranscribeAction {
 					updater.stop();
 					navigator.clipboard.writeText(output);
 					new Notice("Copied: " + output.slice(0, 200) + "...", 5000);
+					notify();
 
 				} catch (err) {
 					console.log(err);
