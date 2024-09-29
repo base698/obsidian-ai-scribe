@@ -46,12 +46,12 @@ export default class ScribePlugin extends Plugin {
         await this.processManager.start(runPath);
 
 
-        let statusBarItemEl = this.addStatusBarItem();
+        const statusBarItemEl = this.addStatusBarItem();
         const llmUpdater: Updater = new ProgressStatusBar(statusBarItemEl, 'Asking AI');
         const transUpdater: Updater = new ProgressStatusBar(statusBarItemEl, 'Transcribing');
 
 
-        let getProviders = (): [TranscriptionProvider, LLMProvider] => {
+        const getProviders = (): [TranscriptionProvider, LLMProvider] => {
             let transProvider: TranscriptionProvider = new LocalWhisperProvider(this.settings.host);
             let llmProvider: LLMProvider = new OllamaLLMProvider(this.settings.host);
 
@@ -64,7 +64,7 @@ export default class ScribePlugin extends Plugin {
         };
 
         this.registerInterval(window.setInterval(async () => {
-            const [_, llmProvider] = getProviders();
+            const [, llmProvider] = getProviders();
             try {
                 const ok = await llmProvider.health();
                 if (ok) {
@@ -83,17 +83,15 @@ export default class ScribePlugin extends Plugin {
             const [transProvider, llmProvider] = getProviders();
             const editor = this.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
 
-            let llmAction: LLMActionModal;
             let transcribeAction: TranscribeAction;
 
             if (editor) {
                 const selectedText = editor.getSelection();
 
-                console.log(selectedText);
                 if (selectedText.trim() == '') {
                     return new Notice('No selection found.  Highlight to use as prompt.');
                 } else if (getFilename(selectedText) === '') {
-                    llmAction = LLMActionModal.init(this, llmProvider, llmUpdater, doHistory);
+                    LLMActionModal.init(this, llmProvider, llmUpdater, doHistory);
 
                 } else {
                     transcribeAction = new TranscribeAction(transProvider, transUpdater, doHistory);
@@ -127,7 +125,7 @@ export default class ScribePlugin extends Plugin {
             id: 'open-history',
             name: 'Open history',
             editorCallback: (editor: Editor, view: MarkdownView) => {
-                let history = getHistory();
+                const history = getHistory();
                 new HistoryModal(this.app, history).open();
             }
         });
