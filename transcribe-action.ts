@@ -1,5 +1,4 @@
 import {
-	MarkdownView,
 	Notice, Plugin, TFile
 } from 'obsidian';
 import { Updater } from 'progress-status-bar';
@@ -48,7 +47,7 @@ export default class TranscribeAction {
 		const start = Date.now();
 
 		try {
-			let output = await this.provider.transcribeFile(file);
+			const output = await this.provider.transcribeFile(file);
 
 			const end = Date.now();
 			const duration = (end - start) / 1000 / 60;
