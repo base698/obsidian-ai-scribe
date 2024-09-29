@@ -23,7 +23,7 @@ export function getHistory(): IHistory {
 export class JSONFileHistory implements IHistory {
     private _filename: string;
 
-    constructor(filename:string='ai-script.json') {
+    constructor(filename='ai-script.json') {
         this._filename = filename;
     }
 

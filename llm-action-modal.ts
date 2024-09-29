@@ -14,9 +14,9 @@ export default class LLMActionModal extends Modal {
 	updater: Updater;
 	provider: LLMProvider;
 	history: IHistory;
-	notify: ()=>void;
+	notify: () => void;
 
-	constructor(plugin: Plugin, provider: LLMProvider, updater: Updater,notify:()=>void) {
+	constructor(plugin: Plugin, provider: LLMProvider, updater: Updater, notify: () => void) {
 		super(plugin.app);
 		this.updater = updater;
 		this.provider = provider;
@@ -50,7 +50,7 @@ export default class LLMActionModal extends Modal {
 					this.close();
 					await this.doModelRequest(model);
 					this.notify();
-					
+
 				})
 
 			});
@@ -73,16 +73,16 @@ export default class LLMActionModal extends Modal {
 			this.updater.start();
 
 			try {
-				let output = await this.provider.getResponse(selectedText, model);
+				const output = await this.provider.getResponse(selectedText, model);
 
-			    const end = Date.now();
+				const end = Date.now();
 				const duration = (end - start) / 1000 / 60;
 				const log = this.history.build()
-				   .duration(duration)
-				   .start(start)
-				   .model(model)
-				   .response(output)
-				   .prompt(selectedText)
+					.duration(duration)
+					.start(start)
+					.model(model)
+					.response(output)
+					.prompt(selectedText)
 				this.history.save(log);
 				navigator.clipboard.writeText(output);
 				new Notice("Copied: " + output.slice(0, 200) + "...", 5000);
@@ -96,8 +96,8 @@ export default class LLMActionModal extends Modal {
 		}
 	}
 
-	public static init(plugin: Plugin, provider: LLMProvider, updater: Updater,notify:()=>void): LLMActionModal {
-		const modal = new LLMActionModal(plugin, provider, updater,notify);
+	public static init(plugin: Plugin, provider: LLMProvider, updater: Updater, notify: () => void): LLMActionModal {
+		const modal = new LLMActionModal(plugin, provider, updater, notify);
 		modal.open();
 		return modal;
 	}
