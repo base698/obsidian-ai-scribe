@@ -70,9 +70,8 @@ export class OpenAILLMProvider implements LLMProvider, TranscriptionProvider {
     return ['gpt-4o', 'gpt-4', 'gpt-3.5-turbo', 'gpt-4o-mini', 'o1-preview']
   }
 
-  async getResponse(prompt: string, model: string = "gpt-4") {
-    console.log('calling openai');
-    const url = 'https://api.openai.com/v1/chat/completions'
+  async getResponse(prompt: string, model = "gpt-4") {
+    const url = 'https://api.openai.com/v1/chat/completions';
     const requestBody = {
       model: model,
       messages: [
@@ -101,7 +100,7 @@ export class OpenAILLMProvider implements LLMProvider, TranscriptionProvider {
 export class OllamaLLMProvider implements LLMProvider {
   host: string;
 
-  constructor(host: string = 'http://127.0.0.1:5522') {
+  constructor(host = 'http://127.0.0.1:5522') {
     this.host = host;
   }
 
@@ -128,7 +127,7 @@ export class OllamaLLMProvider implements LLMProvider {
     return data.models.map((item: any) => item.model);
   }
 
-  async getResponse(prompt: string, model: string = "llama3.1") {
+  async getResponse(prompt: string, model = "llama3.1") {
     // API endpoint URL
     const url = `${this.host}/v1/ollama/${model}`;
 
@@ -164,7 +163,7 @@ export interface TranscriptionProvider {
 
 export class LocalWhisperProvider implements TranscriptionProvider {
   host: string;
-  constructor(host: string = 'http://127.0.0.1:5522') {
+  constructor(host = 'http://127.0.0.1:5522') {
     this.host = host;
   }
 
@@ -176,7 +175,7 @@ export class LocalWhisperProvider implements TranscriptionProvider {
     // API endpoint URL
     const url = `${this.host}/v1/transcribe`;
 
-    let filename = file.vault.adapter.getFullPath(file.path);
+    const filename = file.vault.adapter.getFullPath(file.path);
 
     // Request body
     const body = JSON.stringify({ filename: filename });
