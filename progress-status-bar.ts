@@ -16,7 +16,7 @@ export class ProgressStatusBar implements Updater {
 		this.el = el;
 		this.duration = duration;
 		this.msg = msg;
-        this.el.setText("⛔ Ollama is not Running");
+        this.el.setText("⛔ AI Server is not Running");
 	}
 
 	setMsg(m:string) {

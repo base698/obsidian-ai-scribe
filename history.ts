@@ -1,3 +1,9 @@
+import {
+    App, 
+    Modal, 
+    Notice
+} from 'obsidian';
+
 
 export interface IHistory {
     save(hl: HistoryLog): void;
@@ -89,4 +95,55 @@ class HistoryLog implements IHistoryLog {
         return JSON.stringify(this.json());
     }
 
+}
+
+export class HistoryModal extends Modal {
+    history: IHistory;
+    constructor(app: App, history: IHistory) {
+        super(app);
+        this.history = history;
+    }
+
+    async onOpen() {
+        const { contentEl } = this;
+        let requests = await this.history.get();
+        requests.sort((a,b) => b._start - a._start);
+        if(requests.length > 10) {
+            requests = requests.slice(0,10);
+        }
+
+        // Create table
+        const table = contentEl.createEl('table');
+        const headerRow = table.createEl('tr');
+        headerRow.createEl('th', { text: 'Date' });
+        headerRow.createEl('th', { text: 'Prompt' });
+        headerRow.createEl('th', { text: 'Response' });
+        headerRow.createEl('th', { text: '' });
+
+        requests.forEach((data:IHistoryLog) => {
+        // Add data to table
+        const dataRow = table.createEl('tr');
+        dataRow.createEl('td', { text: `${new Date(data._start).toString().slice(0,24)}` });
+        dataRow.createEl('td', { text: data._prompt.slice(0,100) });
+        dataRow.createEl('td', { text: data._response.slice(0,100) });
+
+        // Create copy button
+        const copyButton = dataRow.createEl('td').createEl('button', { text: 'Copy' });
+        copyButton.addEventListener('click', () => this.copyToClipboard(data));
+
+        });
+    }
+
+    copyToClipboard(data: IHistoryLog) {
+        const textToCopy = `${data._response}`;
+        navigator.clipboard.writeText(textToCopy).then(() => {
+        }, (err) => {
+            new Notice('Failed to copy to clipboard');
+        });
+    }
+
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
+    }
 }

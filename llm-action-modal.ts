@@ -16,7 +16,7 @@ export default class LLMActionModal extends Modal {
 	history: IHistory;
 	notify: ()=>void;
 
-	constructor(plugin: Plugin, host: string, provider: LLMProvider, updater: Updater,notify:()=>void) {
+	constructor(plugin: Plugin, provider: LLMProvider, updater: Updater,notify:()=>void) {
 		super(plugin.app);
 		this.updater = updater;
 		this.provider = provider;
@@ -96,13 +96,9 @@ export default class LLMActionModal extends Modal {
 		}
 	}
 
-	public static init(plugin: Plugin, host: string, provider: LLMProvider, updater: Updater,notify:()=>void): LLMActionModal {
-		const modal = new LLMActionModal(plugin, host, provider, updater,notify);
-		const minutesIcon = plugin.addRibbonIcon('bot', 'Prompt Selection', async (evt: MouseEvent) => {
-			modal.open();
-		});
-		minutesIcon.addClass('my-plugin-ribbon-class');
+	public static init(plugin: Plugin, provider: LLMProvider, updater: Updater,notify:()=>void): LLMActionModal {
+		const modal = new LLMActionModal(plugin, provider, updater,notify);
+		modal.open();
 		return modal;
-
 	}
 }

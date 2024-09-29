@@ -1,6 +1,6 @@
 import {
     App, Editor, MarkdownView,
-    Modal, Plugin, PluginManifest,
+    Plugin, PluginManifest,
     PluginSettingTab, Setting, Notice
 } from 'obsidian';
 
@@ -11,7 +11,8 @@ import { Updater, ProgressStatusBar } from 'progress-status-bar';
 
 import ProcessManager from 'process-manager';
 import { LLMProvider, LocalWhisperProvider, OllamaLLMProvider, OpenAILLMProvider, TranscriptionProvider } from 'ai-client';
-import { getHistory, IHistory, IHistoryLog } from 'history';
+import { getHistory, HistoryModal } from 'history';
+import { getFilename } from 'file-util';
 
 interface ScribePluginSettings {
     host: string;
@@ -66,25 +67,42 @@ export default class ScribePlugin extends Plugin {
             try {
                 const ok = await llmProvider.health();
                 if (ok) {
-                    statusBarItemEl.setText('');
+                    statusBarItemEl.setText('🟢');
                     return;
                 }
             } catch (e) {
-                statusBarItemEl.setText('⛔ AI Server not Running')
+                statusBarItemEl.setText('⛔ AI Server is not Running')
             }
         }, 10 * 1000));
 
 
         const doHistory = () => new HistoryModal(this.app, getHistory()).open();
-        const [transProvider, llmProvider] = getProviders();
-        const transcribeAction = TranscribeAction.init(this, transProvider, transUpdater, doHistory);
-        const llmAction = LLMActionModal.init(this, this.settings.host, llmProvider, llmUpdater, doHistory);
 
-        let resetProviders = () => {
+        const icon = this.addRibbonIcon('bot', 'Prompt Selection', async (evt: MouseEvent) => {
             const [transProvider, llmProvider] = getProviders();
-            transcribeAction.setProvider(transProvider);
-            llmAction.setProvider(llmProvider);
-        }
+            const editor = this.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
+
+            let llmAction: LLMActionModal;
+            let transcribeAction: TranscribeAction;
+
+            if (editor) {
+                const selectedText = editor.getSelection();
+
+                console.log(selectedText);
+                if (selectedText.trim() == '') {
+                    return new Notice('No selection found.  Highlight to use as prompt.');
+                } else if (getFilename(selectedText) === '') {
+                    llmAction = LLMActionModal.init(this, llmProvider, llmUpdater, doHistory);
+
+                } else {
+                    transcribeAction = new TranscribeAction(transProvider, transUpdater, doHistory);
+                    await transcribeAction.doRequest(selectedText);
+                }
+            }
+
+        });
+
+        icon.addClass('my-plugin-ribbon-class');
 
         this.addCommand({
             id: 'stop-server',
@@ -114,7 +132,7 @@ export default class ScribePlugin extends Plugin {
         });
 
         // This adds a settings tab so the user can configure various aspects of the plugin
-        this.addSettingTab(new ScribeSettingTab(this.app, this, resetProviders));
+        this.addSettingTab(new ScribeSettingTab(this.app, this));
 
     }
 
@@ -136,66 +154,13 @@ export default class ScribePlugin extends Plugin {
     }
 }
 
-
-class HistoryModal extends Modal {
-    history: IHistory;
-    constructor(app: App, history: IHistory) {
-        super(app);
-        this.history = history;
-    }
-
-    async onOpen() {
-        const { contentEl } = this;
-        let requests = await this.history.get();
-        requests.sort((a,b) => b._start - a._start);
-        if(requests.length > 10) {
-            requests = requests.slice(0,10);
-        }
-
-        // Create table
-        const table = contentEl.createEl('table');
-        const headerRow = table.createEl('tr');
-        headerRow.createEl('th', { text: 'Date' });
-        headerRow.createEl('th', { text: 'Prompt' });
-        headerRow.createEl('th', { text: 'Response' });
-        headerRow.createEl('th', { text: '' });
-
-        requests.forEach((data:IHistoryLog) => {
-        // Add data to table
-        const dataRow = table.createEl('tr');
-        dataRow.createEl('td', { text: `${new Date(data._start).toString().slice(0,24)}` });
-        dataRow.createEl('td', { text: data._prompt.slice(0,100) });
-        dataRow.createEl('td', { text: data._response.slice(0,100) });
-
-        // Create copy button
-        const copyButton = dataRow.createEl('td').createEl('button', { text: 'Copy' });
-        copyButton.addEventListener('click', () => this.copyToClipboard(data));
-
-        });
-    }
-
-    copyToClipboard(data: IHistoryLog) {
-        const textToCopy = `${data._response}`;
-        navigator.clipboard.writeText(textToCopy).then(() => {
-        }, (err) => {
-            new Notice('Failed to copy to clipboard');
-        });
-    }
-
-    onClose() {
-        const { contentEl } = this;
-        contentEl.empty();
-    }
-}
-
 class ScribeSettingTab extends PluginSettingTab {
     plugin: ScribePlugin;
-    notify: () => void;
 
-    constructor(app: App, plugin: ScribePlugin, notify: () => void) {
+    constructor(app: App, plugin: ScribePlugin) {
         super(app, plugin);
         this.plugin = plugin;
-        this.notify = notify;
+        
     }
 
     display(): void {
@@ -242,7 +207,5 @@ class ScribeSettingTab extends PluginSettingTab {
                         await this.plugin.saveSettings();
                     }))
         }
-
-        this.notify();
     }
 }
