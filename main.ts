@@ -64,10 +64,11 @@ export default class ScribePlugin extends Plugin {
         };
 
         this.registerInterval(window.setInterval(async () => {
+            const [_, llmProvider] = getProviders();
             try {
                 const ok = await llmProvider.health();
                 if (ok) {
-                    statusBarItemEl.setText('🟢');
+                    statusBarItemEl.setText('🟢 AI Running');
                     return;
                 }
             } catch (e) {
