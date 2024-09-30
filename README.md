@@ -1,8 +1,10 @@
 # Obsidian AI Scribe
 
-This Plugin adds two separate ribbon icons to the Desktop version of Obsidian: 
-- an AI transcription button 
-- LLM Prompt button  
+![example workflow](https://github.com/base698/obsidian-ai-scribe/actions/workflows/eslint.yml/badge.svg)
+
+This Plugin adds a ribbon icon to the Desktop version of Obsidian.  The features of the button do the following: 
+- Transcribes the selected audio file ot text
+- Uses the selected text as a LLM Prompt  
 
 When using the recording feature of Obsidian, a link to the audio file is created in your current markdown view like: [[My Recording 12345.webm]].  The transcription feature uses OpenAI's Whisper to transcribe the file into text.  Activate transcription by highlighting the file link and clicking the transcribe button on the left side of the screen.
 
@@ -11,7 +13,6 @@ The LLM Prompt button takes the currently selected text and uses the selected te
 ## Usage
 
 - The Plugin Manages a server running on 5522 for the local Ollama interaction.  You must have python and ffmpeg installed for all the features to work properly.  Setting the plugin into the OpenAI mode will not require running the server.
-
 
 ## First time developing plugins in Obsidian?
 
