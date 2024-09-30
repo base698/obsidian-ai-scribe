@@ -97,6 +97,10 @@ export class OpenAILLMProvider implements LLMProvider, TranscriptionProvider {
 
 }
 
+interface HasModel {
+  model: string;
+}
+
 export class OllamaLLMProvider implements LLMProvider {
   host: string;
 
@@ -124,7 +128,7 @@ export class OllamaLLMProvider implements LLMProvider {
     const response = await fetch(url, options);
     const data = await response.json();
 
-    return data.models.map((item: any) => item.model);
+    return data.models.map((item: HasModel) => item.model);
   }
 
   async getResponse(prompt: string, model = "llama3.1") {
