@@ -1,6 +1,6 @@
 import {
-    App, 
-    Modal, 
+    App,
+    Modal,
     Notice
 } from 'obsidian';
 
@@ -13,7 +13,7 @@ export interface IHistory {
 
 let appHistory: IHistory;
 export function getHistory(): IHistory {
-    if(!appHistory) {
+    if (!appHistory) {
         appHistory = new JSONFileHistory();
     }
 
@@ -23,21 +23,21 @@ export function getHistory(): IHistory {
 export class JSONFileHistory implements IHistory {
     private _filename: string;
 
-    constructor(filename='ai-script.json') {
+    constructor(filename = 'ai-script.json') {
         this._filename = filename;
     }
 
     save(hl: HistoryLog) {
         const line = hl.toString();
 
-        window.app.vault.adapter.append(this._filename,line+'\n');
+        window.app.vault.adapter.append(this._filename, line + '\n');
     }
 
-    async get():Promise<IHistoryLog[]> {
+    async get(): Promise<IHistoryLog[]> {
         const data = await window.app.vault.adapter.read(this._filename);
         const lines = data.split('\n');
-        return lines.filter((item:string)=>item.trim()).map((line:string) => {
-            const log:IHistoryLog = JSON.parse(line);
+        return lines.filter((item: string) => item.trim()).map((line: string) => {
+            const log: IHistoryLog = JSON.parse(line);
             return log;
         })
     }
@@ -72,22 +72,22 @@ class HistoryLog implements IHistoryLog {
         return this;
     }
 
-    model(m:string): HistoryLog {
+    model(m: string): HistoryLog {
         this._model = m;
         return this;
     }
 
-    response(r:string): HistoryLog {
+    response(r: string): HistoryLog {
         this._response = r;
         return this;
     }
 
-    prompt(p:string): HistoryLog {
+    prompt(p: string): HistoryLog {
         this._prompt = p;
         return this;
     }
 
-    json():IHistoryLog {
+    json(): IHistoryLog {
         return this;
     }
 
@@ -107,29 +107,31 @@ export class HistoryModal extends Modal {
     async onOpen() {
         const { contentEl } = this;
         let requests = await this.history.get();
-        requests.sort((a,b) => b._start - a._start);
-        if(requests.length > 10) {
-            requests = requests.slice(0,10);
+        requests.sort((a, b) => b._start - a._start);
+        if (requests.length > 10) {
+            requests = requests.slice(0, 10);
         }
 
         // Create table
         const table = contentEl.createEl('table');
         const headerRow = table.createEl('tr');
         headerRow.createEl('th', { text: 'Date' });
+        headerRow.createEl('th', { text: 'Model' });
         headerRow.createEl('th', { text: 'Prompt' });
         headerRow.createEl('th', { text: 'Response' });
         headerRow.createEl('th', { text: '' });
 
-        requests.forEach((data:IHistoryLog) => {
-        // Add data to table
-        const dataRow = table.createEl('tr');
-        dataRow.createEl('td', { text: `${new Date(data._start).toString().slice(0,24)}` });
-        dataRow.createEl('td', { text: data._prompt.slice(0,100) });
-        dataRow.createEl('td', { text: data._response.slice(0,100) });
+        requests.forEach((data: IHistoryLog) => {
+            // Add data to table
+            const dataRow = table.createEl('tr');
+            dataRow.createEl('td', { text: `${new Date(data._start).toString().slice(0, 24)}` });
+            dataRow.createEl('td', { text: data._model });
+            dataRow.createEl('td', { text: data._prompt.slice(0, 100) });
+            dataRow.createEl('td', { text: data._response.slice(0, 100) });
 
-        // Create copy button
-        const copyButton = dataRow.createEl('td').createEl('button', { text: 'Copy' });
-        copyButton.addEventListener('click', () => this.copyToClipboard(data));
+            // Create copy button
+            const copyButton = dataRow.createEl('td').createEl('button', { text: 'Copy' });
+            copyButton.addEventListener('click', () => this.copyToClipboard(data));
 
         });
     }
@@ -137,6 +139,7 @@ export class HistoryModal extends Modal {
     copyToClipboard(data: IHistoryLog) {
         const textToCopy = `${data._response}`;
         navigator.clipboard.writeText(textToCopy).then(() => {
+            this.close();
         }, (err) => {
             new Notice('Failed to copy to clipboard');
         });
