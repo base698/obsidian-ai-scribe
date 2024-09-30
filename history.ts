@@ -97,6 +97,40 @@ class HistoryLog implements IHistoryLog {
 
 }
 
+function timeAgo(date) {
+    const now = new Date();
+    const seconds = Math.floor((now - date) / 1000);  // Difference in seconds
+
+    let interval = Math.floor(seconds / 31536000);  // Seconds in a year
+    if (interval >= 1) {
+        return interval === 1 ? "1 year ago" : `${interval} years ago`;
+    }
+
+    interval = Math.floor(seconds / 2592000);  // Seconds in a month
+    if (interval >= 1) {
+        return interval === 1 ? "1 month ago" : `${interval} months ago`;
+    }
+
+    interval = Math.floor(seconds / 86400);  // Seconds in a day
+    if (interval >= 1) {
+        return interval === 1 ? "1 day ago" : `${interval} days ago`;
+    }
+
+    interval = Math.floor(seconds / 3600);  // Seconds in an hour
+    if (interval >= 1) {
+        return interval === 1 ? "1 hour ago" : `${interval} hours ago`;
+    }
+
+    interval = Math.floor(seconds / 60);  // Seconds in a minute
+    if (interval >= 1) {
+        return interval === 1 ? "1 minute ago" : `${interval} minutes ago`;
+    }
+
+    return "just now";
+}
+
+
+
 export class HistoryModal extends Modal {
     history: IHistory;
     constructor(app: App, history: IHistory) {
@@ -112,26 +146,28 @@ export class HistoryModal extends Modal {
             requests = requests.slice(0, 10);
         }
 
+        contentEl.className = 'scribe-history';
         // Create table
         const table = contentEl.createEl('table');
         const headerRow = table.createEl('tr');
+        headerRow.createEl('th', { text: '' });
         headerRow.createEl('th', { text: 'Date' });
         headerRow.createEl('th', { text: 'Model' });
         headerRow.createEl('th', { text: 'Prompt' });
         headerRow.createEl('th', { text: 'Response' });
-        headerRow.createEl('th', { text: '' });
 
         requests.forEach((data: IHistoryLog) => {
             // Add data to table
             const dataRow = table.createEl('tr');
-            dataRow.createEl('td', { text: `${new Date(data._start).toString().slice(0, 24)}` });
-            dataRow.createEl('td', { text: data._model });
-            dataRow.createEl('td', { text: data._prompt.slice(0, 100) });
-            dataRow.createEl('td', { text: data._response.slice(0, 100) });
-
             // Create copy button
             const copyButton = dataRow.createEl('td').createEl('button', { text: 'Copy' });
+            copyButton.className = 'copy-button';
             copyButton.addEventListener('click', () => this.copyToClipboard(data));
+            dataRow.createEl('td', { text: `${timeAgo(new Date(data._start))}` });
+            dataRow.createEl('td', { text: data._model });
+            dataRow.createEl('td', { text: data._prompt });
+            dataRow.createEl('td', { text: data._response });
+
 
         });
     }

@@ -6,3 +6,50 @@ available in the app when your plugin is enabled.
 If your plugin does not need CSS, delete this file.
 
 */
+
+  /* Table styling */
+  table.scribe-history {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  /* Table header styling */
+  .scribe-history th {
+    background-color: #007bff; /* Header background color */
+    color: white;
+    font-weight: bold;
+    text-align: left;
+    padding: 8px;
+    border-bottom: 2px solid #ddd;
+  }
+  
+  /* Table data styling */
+  .scribe-history td {
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+    max-width: 150px;  /* Set the maximum width for the cell */
+    white-space: nowrap;  /* Prevent text wrapping */
+    overflow: hidden;  /* Hide overflow text */
+    text-overflow: ellipsis;  /* Show ellipsis (...) for truncated text */
+    position: relative;  /* Required for positioning the tooltip */
+    cursor: pointer;  /* Change cursor to indicate hover */
+  }
+  
+  /* Hover effect for rows */
+  .scribe-history tr:hover {
+    background-color: #f1f1f1; /* Highlight row on hover */
+  }
+  
+  /* Button styling for copy */
+  .scribe-history button.copy-button {
+    background-color: #099a04; /* Green button color */
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .scribe-history button.copy-button:hover {
+    background-color: #218838; /* Darken button on hover */
+  }
