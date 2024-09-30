@@ -7,7 +7,7 @@ export interface Updater {
 
 export class ProgressStatusBar implements Updater {
 	el: HTMLElement;
-	currentInterval: number;
+	currentInterval: number | NodeJS.Timer;
 	msg: string;
 	duration: number;
 	runs: 0;

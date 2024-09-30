@@ -4,7 +4,7 @@ import {
 } from 'obsidian';
 
 import { LLMProvider } from 'ai-client';
-import { getHistory, IHistory } from 'history';
+import { IHistory } from 'history';
 
 import { Updater } from 'progress-status-bar';
 
@@ -16,12 +16,12 @@ export default class LLMActionModal extends Modal {
 	history: IHistory;
 	notify: () => void;
 
-	constructor(plugin: Plugin, provider: LLMProvider, updater: Updater, notify: () => void) {
+	constructor(plugin: Plugin, provider: LLMProvider, updater: Updater, history: IHistory, notify: () => void) {
 		super(plugin.app);
 		this.updater = updater;
 		this.provider = provider;
 		this.plugin = plugin;
-		this.history = getHistory();
+		this.history = history;
 		this.notify = notify;
 
 		provider.health().then(() => {
@@ -84,9 +84,6 @@ export default class LLMActionModal extends Modal {
 					.response(output)
 					.prompt(selectedText)
 				this.history.save(log);
-				navigator.clipboard.writeText(output);
-				new Notice("Copied: " + output.slice(0, 200) + "...", 5000);
-				console.log(output)
 
 			} catch (e) {
 				new Notice(e);
@@ -96,8 +93,8 @@ export default class LLMActionModal extends Modal {
 		}
 	}
 
-	public static init(plugin: Plugin, provider: LLMProvider, updater: Updater, notify: () => void): LLMActionModal {
-		const modal = new LLMActionModal(plugin, provider, updater, notify);
+	public static init(plugin: Plugin, provider: LLMProvider, updater: Updater, history: IHistory, notify: () => void): LLMActionModal {
+		const modal = new LLMActionModal(plugin, provider, updater, history, notify);
 		modal.open();
 		return modal;
 	}

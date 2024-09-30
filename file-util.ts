@@ -5,3 +5,15 @@ export function getFilename(selection: string): string {
 	}
 	return '';
 }
+
+export function trimResourcePath(path: string): string {
+	const qIndex = path.indexOf('?');
+	let result = path;
+	if(qIndex > -1) {
+		result = result.slice(0,qIndex);
+	}
+	result = result.replace(/app:\/\/([a-f,0-9])+/,'');
+	result = decodeURIComponent(result);
+	return result;
+
+}

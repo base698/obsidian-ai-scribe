@@ -1,7 +1,8 @@
 import {
     App,
     Modal,
-    Notice
+    Notice,
+    DataAdapter
 } from 'obsidian';
 
 
@@ -12,9 +13,9 @@ export interface IHistory {
 }
 
 let appHistory: IHistory;
-export function getHistory(): IHistory {
+export function getHistory(adapter: DataAdapter): IHistory {
     if (!appHistory) {
-        appHistory = new JSONFileHistory();
+        appHistory = new JSONFileHistory(adapter);
     }
 
     return appHistory;
@@ -22,19 +23,21 @@ export function getHistory(): IHistory {
 
 export class JSONFileHistory implements IHistory {
     private _filename: string;
+    private adapter: DataAdapter;
 
-    constructor(filename = 'ai-script.json') {
+    constructor(adapter:DataAdapter,filename = 'ai-script.json') {
         this._filename = filename;
+        this.adapter = adapter;
     }
 
     save(hl: HistoryLog) {
         const line = hl.toString();
 
-        window.app.vault.adapter.append(this._filename, line + '\n');
+        this.adapter.append(this._filename, line + '\n');
     }
 
     async get(): Promise<IHistoryLog[]> {
-        const data = await window.app.vault.adapter.read(this._filename);
+        const data = await this.adapter.read(this._filename);
         const lines = data.split('\n');
         return lines.filter((item: string) => item.trim()).map((line: string) => {
             const log: IHistoryLog = JSON.parse(line);
@@ -97,9 +100,9 @@ class HistoryLog implements IHistoryLog {
 
 }
 
-function timeAgo(date) {
-    const now = new Date();
-    const seconds = Math.floor((now - date) / 1000);  // Difference in seconds
+function timeAgo(date:Date) {
+    const now:Date = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);  // Difference in seconds
 
     let interval = Math.floor(seconds / 31536000);  // Seconds in a year
     if (interval >= 1) {

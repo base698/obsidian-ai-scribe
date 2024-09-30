@@ -1,4 +1,5 @@
 import { TFile } from "obsidian";
+import { trimResourcePath } from "file-util";
 
 
 export interface LLMProvider {
@@ -179,7 +180,7 @@ export class LocalWhisperProvider implements TranscriptionProvider {
     // API endpoint URL
     const url = `${this.host}/v1/transcribe`;
 
-    const filename = file.vault.adapter.getFullPath(file.path);
+    const filename = trimResourcePath(file.vault.adapter.getResourcePath(file.path));
 
     // Request body
     const body = JSON.stringify({ filename: filename });

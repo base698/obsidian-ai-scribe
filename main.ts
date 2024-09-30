@@ -1,7 +1,8 @@
 import {
     App, Editor, MarkdownView,
     Plugin, PluginManifest,
-    PluginSettingTab, Setting, Notice
+    PluginSettingTab, Setting, Notice,
+    FileSystemAdapter
 } from 'obsidian';
 
 
@@ -38,7 +39,8 @@ export default class ScribePlugin extends Plugin {
     async onload() {
         await this.loadSettings();
 
-        const vaultPath = this.app.vault.adapter.basePath;
+        const adapter = this.app.vault.adapter as FileSystemAdapter;
+        const vaultPath = adapter.getBasePath();
         const pluginDir = `${vaultPath}/.obsidian/plugins/${this.manifest.id}`;
         const runPath = `${pluginDir}/run_server.sh`;
 
@@ -77,7 +79,7 @@ export default class ScribePlugin extends Plugin {
         }, 10 * 1000));
 
 
-        const doHistory = () => new HistoryModal(this.app, getHistory()).open();
+        const doHistory = () => new HistoryModal(this.app, getHistory(this.app.vault.adapter)).open();
 
         const icon = this.addRibbonIcon('bot', 'Prompt Selection', async (evt: MouseEvent) => {
             const [transProvider, llmProvider] = getProviders();
@@ -87,15 +89,24 @@ export default class ScribePlugin extends Plugin {
 
             if (editor) {
                 const selectedText = editor.getSelection();
+                const history = getHistory(this.app.vault.adapter);
+
+                const fileMatch = getFilename(selectedText);
 
                 if (selectedText.trim() == '') {
                     return new Notice('No selection found.  Highlight to use as prompt.');
-                } else if (getFilename(selectedText) === '') {
-                    LLMActionModal.init(this, llmProvider, llmUpdater, doHistory);
+                } else if (fileMatch === '') {
+                    LLMActionModal.init(this, llmProvider, llmUpdater, history, doHistory);
 
                 } else {
-                    transcribeAction = new TranscribeAction(transProvider, transUpdater, doHistory);
-                    await transcribeAction.doRequest(selectedText);
+                    transcribeAction = new TranscribeAction(transProvider, transUpdater, history, doHistory);
+                    //const file = ...
+                    const file = this.app.vault.getFileByPath(fileMatch);
+                    if(file) {
+                        await transcribeAction.doRequest(file);
+                    } else {
+                        new Notice(`No file found for ${selectedText}`)
+                    }
                 }
             }
 
@@ -125,7 +136,7 @@ export default class ScribePlugin extends Plugin {
             id: 'open-history',
             name: 'Open history',
             editorCallback: (editor: Editor, view: MarkdownView) => {
-                const history = getHistory();
+                const history = getHistory(this.app.vault.adapter);
                 new HistoryModal(this.app, history).open();
             }
         });
