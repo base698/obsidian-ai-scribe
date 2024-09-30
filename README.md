@@ -3,7 +3,7 @@
 ![example workflow](https://github.com/base698/obsidian-ai-scribe/actions/workflows/eslint.yml/badge.svg)
 
 This Plugin adds a ribbon icon to the Desktop version of Obsidian.  The features of the button do the following: 
-- Transcribes the selected audio file ot text
+- Transcribes the selected audio file to text
 - Uses the selected text as a LLM Prompt  
 
 When using the recording feature of Obsidian, a link to the audio file is created in your current markdown view like: [[My Recording 12345.webm]].  The transcription feature uses OpenAI's Whisper to transcribe the file into text.  Activate transcription by highlighting the file link and clicking the transcribe button on the left side of the screen.
