@@ -14,6 +14,12 @@ The LLM Prompt button takes the currently selected text and uses the selected te
 
 - The Plugin Manages a server running on 5522 for the local Ollama interaction.  You must have python and ffmpeg installed for all the features to work properly.  Setting the plugin into the OpenAI mode will not require running the server.
 
+## Code Overview
+- Providers: Handle the functionality related to LLMs (OpenAILLMProvider, OllamaLLMProvider) and transcription (LocalWhisperProvider).
+- History: Manages logging and displaying past actions or interactions (JSONFileHistory, HistoryLog, HistoryModal).
+- Action: Handles kickoff of provider tasks like TranscribeAction
+- Process Management: Handles various tasks and background processes (ProcessManager).
+
 ## First time developing plugins in Obsidian?
 
 Quick starting guide for new plugin devs:
